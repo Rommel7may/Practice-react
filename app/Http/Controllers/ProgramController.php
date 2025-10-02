@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Program;
 
 class ProgramController extends Controller
 {
@@ -12,7 +13,9 @@ class ProgramController extends Controller
      */
     public function index()
     {
-        return inertia::render('program-crud');
+        return inertia::render('program-crud',[
+            'programs'=> Program::all(),
+        ]);
     }
 
     /**
@@ -28,7 +31,9 @@ class ProgramController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate(['name' => 'required']);
+        Program::create($request->only('name'));
+        return redirect()->route('programs.index');
     }
 
     /**
@@ -50,16 +55,19 @@ class ProgramController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+      public function update(Request $request, Program $program)
     {
-        //
+        $request->validate(['name' => 'required']);
+        $program->update($request->only('name'));
+        return redirect()->route('programs.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Program $program)
     {
-        //
+        $program->delete();
+        return redirect()->route('programs.index');
     }
 }

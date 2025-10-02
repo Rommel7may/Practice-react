@@ -1,153 +1,119 @@
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { useForm } from "@inertiajs/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Program managamenent',
-        href: 'program',
-    },
-];
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { route } from "ziggy-js"; // ✅ Named import (Ziggy v1.6+)
 
-export default function Dashboard() {
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Program" />
-            <div className="m-5 w-2xl p-5">
-                <Dialog>
-                    <DialogTrigger>
-                        <Button>Add student</Button>
-                    </DialogTrigger>
+type Program = {
+  id: number;
+  name: string;
+};
 
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add new program</DialogTitle>
-                            <DialogDescription>
-                                Fill in the details of the new program you want
-                                to create.
-                            </DialogDescription>
-                        </DialogHeader>
+interface PageProps {
+  programs: Program[];
+}
 
-                        <div className="space-y-4">
-                            <Input placeholder="e.g. Bs Information Technology" />
-                        </div>
+export default function ProgramCrud({ programs }: PageProps) {
+  const { data, setData, post, put, delete: destroyFn, reset, errors } = useForm({
+    name: "",
+  });
 
-                        <DialogFooter>
-                            <Button type="submit">Save</Button>
-                            <DialogClose>
-                                <Button variant="ghost">Cancelljhjh</Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
+  const [editId, setEditId] = useState<number | null>(null);
 
-            <div className="m-5 justify-center p-5">
-                <Table>
-                    <TableCaption>
-                        A list of all available programs.
-                    </TableCaption>
+  // ✅ Create or Update
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Program name</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
+    if (editId) {
+      put(route("programs.update", editId), {
+        onSuccess: () => {
+          reset();
+          setEditId(null);
+        },
+      });
+    } else {
+      post(route("programs.store"), {
+        onSuccess: () => reset(),
+      });
+    }
+  };
 
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>BS Information Technology</TableCell>
-                            <TableCell className="text-right">
+  // ✅ Edit mode
+  const handleEdit = (program: Program) => {
+    setData("name", program.name);
+    setEditId(program.id);
+  };
 
-                                {/* edit modal */}
-                                <Dialog>
-                                    <DialogTrigger>
-                                        <Button variant="secondary" className='m-2'>
-                                            Edit
-                                        </Button>
-                                    </DialogTrigger>
+  // ✅ Delete
+  const handleDelete = (id: number) => {
+    destroyFn(route("programs.destroy", id));
+  };
 
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Update program
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                Update the program
-                                            </DialogDescription>
-                                        </DialogHeader>
+  return (
+    <div className="p-6 max-w-xl mx-auto space-y-6">
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="flex-1">
+          <Input
+            value={data.name}
+            onChange={(e) => setData("name", e.target.value)}
+            placeholder="Program name"
+          />
+          {errors.name && (
+            <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+          )}
+        </div>
+        <Button type="submit">{editId ? "Update" : "Add"}</Button>
+      </form>
 
-                                        <DialogFooter>
-                                            <DialogClose>
-                                                <Button variant="ghost">
-                                                    Cancel
-                                                </Button>
-                                            </DialogClose>
-                                            <Button variant="outline">
-                                                Save
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-
-                                {/* delete modal */}
-                                <Dialog>
-                                    <DialogTrigger>
-                                        <Button variant="destructive">
-                                            Delete
-                                        </Button>
-                                    </DialogTrigger>
-
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Are you sure to delete this
-                                                program?
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                This action will be undone
-                                                without confrimation
-                                            </DialogDescription>
-                                        </DialogHeader>
-
-                                        <DialogFooter>
-                                            <DialogClose>
-                                                <Button variant="ghost">
-                                                    Cancel
-                                                </Button>
-                                            </DialogClose>
-                                            <Button variant="destructive">
-                                                Delete
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </div>
-        </AppLayout>
-    );
+      {/* Table */}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="text-right">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {programs.length > 0 ? (
+            programs.map((program) => (
+              <TableRow key={program.id}>
+                <TableCell>{program.id}</TableCell>
+                <TableCell>{program.name}</TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleEdit(program)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDelete(program.id)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-gray-500">
+                No programs found.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }
